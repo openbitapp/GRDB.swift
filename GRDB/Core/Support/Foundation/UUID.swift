@@ -53,9 +53,15 @@ extension UUID: DatabaseValueConvertible {
     public static func fromDatabaseValue(_ dbValue: DatabaseValue) -> UUID? {
         switch dbValue.storage {
         case .blob(let data) where data.count == 16:
+            #if swift(>=5.0)
+            return data.withUnsafeBytes {
+                UUID(uuid: $0.bindMemory(to: uuid_t.self).first!)
+            }
+            #else
             return data.withUnsafeBytes {
                 UUID(uuid: $0.pointee)
             }
+            #endif
         case .string(let string):
             return UUID(uuidString: string)
         default:

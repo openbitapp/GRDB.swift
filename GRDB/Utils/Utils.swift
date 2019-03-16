@@ -52,7 +52,7 @@ func GRDBPrecondition(_ condition: @autoclosure() -> Bool, _ message: @autoclosu
     /// https://bugs.swift.org/browse/SR-905 and
     /// https://github.com/groue/GRDB.swift/issues/37
     if !condition() {
-        fatalError(message, file: file, line: line)
+        fatalError(message(), file: file, line: line)
     }
 }
 
@@ -64,7 +64,7 @@ func cast<T, U>(_ value: T) -> U? {
 extension Array {
     /// Removes the first object that matches *predicate*.
     mutating func removeFirst(_ predicate: (Element) throws -> Bool) rethrows {
-        if let index = try index(where: predicate) {
+        if let index = try firstIndex(where: predicate) {
             remove(at: index)
         }
     }
@@ -81,3 +81,17 @@ extension DispatchQueue {
         return DispatchQueue.getSpecific(key: mainKey) != nil
     }
 }
+
+#if !swift(>=4.2)
+extension Collection {
+    func firstIndex(where predicate:(Element) throws -> Bool) rethrows -> Index? {
+        return try index(where: predicate)
+    }
+}
+
+extension Collection where Element: Equatable {
+    func firstIndex(of element: Element) -> Index? {
+        return index(of: element)
+    }
+}
+#endif

@@ -213,7 +213,7 @@ public struct SQLBinaryOperator : Hashable {
         return SQLBinaryOperator(negatedSQL, negated: sql)
     }
     
-    #if !swift(>=4.2)
+    #if !swift(>=4.1.50)
     /// :nodoc:
     public var hashValue: Int {
         return sql.hashValue ^ (negatedSQL?.hashValue ?? 0)

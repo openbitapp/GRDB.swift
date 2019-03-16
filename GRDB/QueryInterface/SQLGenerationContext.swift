@@ -271,7 +271,7 @@ public class TableAlias: Hashable {
         return expression.qualifiedExpression(with: self)
     }
     
-    #if swift(>=4.2)
+    #if swift(>=4.1.50)
     /// :nodoc:
     public func hash(into hasher: inout Hasher) {
         hasher.combine(ObjectIdentifier(root))

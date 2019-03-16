@@ -1263,7 +1263,7 @@ private struct InsertQuery: Hashable {
     let tableName: String
     let insertedColumns: [String]
     
-    #if !swift(>=4.2)
+    #if !swift(>=4.1.50)
     var hashValue: Int { return tableName.hashValue }
     #endif
 }
@@ -1297,7 +1297,7 @@ private struct UpdateQuery: Hashable {
     let updatedColumns: [String]
     let conditionColumns: [String]
     
-    #if !swift(>=4.2)
+    #if !swift(>=4.1.50)
     var hashValue: Int { return tableName.hashValue }
     #endif
 }

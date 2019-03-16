@@ -167,10 +167,22 @@ class GRDBTestCase: XCTestCase {
     }
 }
 
-#if !swift(>=4.2)
+#if !swift(>=4.1.5)
 extension Sequence {
     func allSatisfy(_ predicate: (Self.Element) throws -> Bool) rethrows -> Bool {
         return try !contains(where: { try !predicate($0) })
+    }
+}
+
+extension Collection {
+    func firstIndex(where predicate:(Element) throws -> Bool) rethrows -> Index? {
+        return try index(where: predicate)
+    }
+}
+
+extension Collection where Element: Equatable {
+    func firstIndex(of element: Element) -> Index? {
+        return index(of: element)
     }
 }
 #endif

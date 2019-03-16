@@ -149,7 +149,7 @@ public struct DatabaseValue: Hashable, CustomStringConvertible, DatabaseValueCon
 // Hashable
 extension DatabaseValue {
     
-    #if swift(>=4.2)
+    #if swift(>=4.1.50)
     /// :nodoc:
     public func hash(into hasher: inout Hasher) {
         switch storage {
