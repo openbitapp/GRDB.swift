@@ -78,3 +78,17 @@ public struct HasOneAssociation<Origin, Destination>: AssociationToOne {
 
 // Allow HasOneAssociation(...).filter(key: ...)
 extension HasOneAssociation: TableRequest where Destination: TableRecord { }
+
+
+extension HasOneAssociation where Destination: TableRecord {
+
+    public func matching(_ pattern: FTS5Pattern?) -> HasOneAssociation {
+        guard let pattern = pattern else {
+            return none()
+        }
+        let alias = TableAlias()
+        let matchExpression = TableMatchExpression(alias: alias, pattern: pattern.databaseValue)
+        return self.aliased(alias).filter(matchExpression)
+    }
+
+}
