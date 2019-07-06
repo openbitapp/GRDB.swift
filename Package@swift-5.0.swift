@@ -5,14 +5,14 @@ import PackageDescription
 
 let package = Package(
     name: "GRDB",
-    products: [
-        .library(name: "GRDB", targets: ["GRDB"]),
-    ],
     platforms: [
         .iOS(.v10),
         .watchOS(.v3),
         .tvOS(.v12),
         .macOS(.v10_12)
+    ],
+    products: [
+        .library(name: "GRDB", targets: ["GRDB"]),
     ],
     dependencies: [
         .package(url: "https://github.com/groue/CSQLite.git", from: "0.2.0"),
