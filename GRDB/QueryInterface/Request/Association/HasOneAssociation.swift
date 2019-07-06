@@ -80,7 +80,7 @@ public struct HasOneAssociation<Origin, Destination>: AssociationToOne {
 extension HasOneAssociation: TableRequest where Destination: TableRecord { }
 
 
-extension HasOneAssociation where Destination: TableRecord {
+extension HasOneAssociation {
 
     public func matching(_ pattern: FTS5Pattern?) -> HasOneAssociation {
         guard let pattern = pattern else {
