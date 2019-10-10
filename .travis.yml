@@ -71,6 +71,27 @@ jobs:
       gemfile: .ci/gemfiles/Gemfile.travis
       osx_image: xcode10.2
       env:
+        - TID=GRDBtvOS (Swift 5, tvOS <MAX>)
+      script: make test_framework_GRDBtvOS_maxTarget_maxSwift
+    
+    - stage: Test GRDB Xcode 10.2
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10.2
+      env:
+        - TID=GRDBtvOS (Swift 4.2, tvOS <MAX>)
+      script: make test_framework_GRDBtvOS_maxTarget_minSwift
+    
+    - stage: Test GRDB Xcode 10.2
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10.2
+      env:
+        - TID=GRDBtvOS (Swift 5, tvOS <MIN>)
+      script: make test_framework_GRDBtvOS_minTarget
+    
+    - stage: Test GRDB Xcode 10.2
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10.2
+      env:
         - TID=GRDB [SPM] (macOS)
       script: make test_SPM
     
@@ -146,8 +167,16 @@ jobs:
       gemfile: .ci/gemfiles/Gemfile.travis
       osx_image: xcode10.2
       env:
-        - TID=CocoaPods GRDB
-      script: make test_install_GRDB_CocoaPods
+        - TID=CocoaPods GRDB (framework)
+      script: make test_install_GRDB_CocoaPods_framework
+    
+    # CocoaPods Install GRDB
+    - stage: Test Installation Xcode 10.2
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10.2
+      env:
+        - TID=CocoaPods GRDB (static)
+      script: make test_install_GRDB_CocoaPods_static
     
     # SPM Install
     - stage: Test Installation Xcode 10.2
@@ -187,6 +216,20 @@ jobs:
       env:
         - TID=GRDBiOS (Swift 4.2, iOS <MIN>)
       script: make test_framework_GRDBiOS_minTarget
+    
+    - stage: Test GRDB Xcode 10.1
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10.1
+      env:
+        - TID=GRDBtvOS (Swift 4.2, tvOS <MAX>)
+      script: make test_framework_GRDBtvOS_maxTarget_maxSwift
+    
+    - stage: Test GRDB Xcode 10.1
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10.1
+      env:
+        - TID=GRDBtvOS (Swift 4.2, tvOS <MIN>)
+      script: make test_framework_GRDBtvOS_minTarget
     
     - stage: Test GRDB Xcode 10.1
       gemfile: .ci/gemfiles/Gemfile.travis
@@ -254,6 +297,20 @@ jobs:
       gemfile: .ci/gemfiles/Gemfile.travis
       osx_image: xcode10
       env:
+        - TID=GRDBtvOS (Swift 4.2, tvOS <MAX>)
+      script: make test_framework_GRDBtvOS_maxTarget_maxSwift
+    
+    - stage: Test GRDB Xcode 10
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10
+      env:
+        - TID=GRDBtvOS (Swift 4.2, tvOS <MIN>)
+      script: make test_framework_GRDBtvOS_minTarget
+    
+    - stage: Test GRDB Xcode 10
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10
+      env:
         - TID=GRDB [SPM] (macOS)
       script: make test_SPM
     
@@ -297,10 +354,10 @@ jobs:
     #   env:
     #     - TID=SQLCipher 4
     #   script: make test_framework_SQLCipher4
-    # 
-    # ###########################################
-    # ## Test Installation Xcode 10
-    # 
+    
+    ###########################################
+    ## Test Installation Xcode 10
+    
     # # Manual Install
     # - stage: Test Installation Xcode 10
     #   gemfile: .ci/gemfiles/Gemfile.travis
@@ -316,15 +373,23 @@ jobs:
     #   env:
     #     - TID=CocoaPods Lint
     #   script: make test_CocoaPodsLint_GRDB
-    # 
-    # # CocoaPods Install GRDB
-    # - stage: Test Installation Xcode 10
-    #   gemfile: .ci/gemfiles/Gemfile.travis
-    #   osx_image: xcode10
-    #   env:
-    #     - TID=CocoaPods GRDB
-    #   script: make test_install_GRDB_CocoaPods
-    # 
+    
+    # CocoaPods Install GRDB
+    - stage: Test Installation Xcode 10
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10
+      env:
+        - TID=CocoaPods GRDB (framework)
+      script: make test_install_GRDB_CocoaPods_framework
+    
+    # CocoaPods Install GRDB
+    - stage: Test Installation Xcode 10
+      gemfile: .ci/gemfiles/Gemfile.travis
+      osx_image: xcode10
+      env:
+        - TID=CocoaPods GRDB (static)
+      script: make test_install_GRDB_CocoaPods_static
+    
     # # SPM Install
     # - stage: Test Installation Xcode 10
     #   gemfile: .ci/gemfiles/Gemfile.travis
