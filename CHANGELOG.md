@@ -5,12 +5,17 @@ All notable changes to this project will be documented in this file.
 
 GRDB adheres to [Semantic Versioning](https://semver.org/), with one expection: APIs flagged [**:fire: EXPERIMENTAL**](README.md#what-are-experimental-features). Those are unstable, and may break between any two minor releases of the library.
 
+
 <!--
 [Next Release](#next-release)
 -->
 
+
 #### 4.x Releases
 
+- `4.4.x` Releases - [4.4.0](#440)
+- `4.3.x` Releases - [4.3.0](#430)
+- `4.2.x` Releases - [4.2.0](#420) | [4.2.1](#421)
 - `4.1.x` Releases - [4.1.0](#410) | [4.1.1](#411)
 - `4.0.x` Releases - [4.0.0](#400) | [4.0.1](#401)
 
@@ -51,9 +56,178 @@ GRDB adheres to [Semantic Versioning](https://semver.org/), with one expection: 
 
 - [0.110.0](#01100), ...
 
+
 <!--
 ## Next Release
 -->
+
+## 4.4.0
+
+Released September 6, 2019 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.3.0...v4.4.0)
+
+
+### New
+
+- [#602](https://github.com/groue/GRDB.swift/pull/602): Don't keep the sqlCipher passphrase in memory longer than necessary
+- [#603](https://github.com/groue/GRDB.swift/pull/603): DatabasePool write barrier
+
+
+### Documentation Diff
+
+SQLCipher passphrase management has been refactored: you will get deprecation warnings. Check out the rewritten [Encryption](README.md#encryption) chapter in order to migrate your code and remove those warnings.
+
+The [Advanced DatabasePool](README.md#advanced-databasepool) chapter has been extended for the new `barrierWriteWithoutTransaction` method.
+
+
+### API Diff
+
+**Deprecations**
+
+```diff
+ class DatabaseQueue {
++    @available(*, deprecated)
+     func change(passphrase: String) throws
+ }
+ 
+ class DatabasePool {
++    @available(*, deprecated)
+     func change(passphrase: String) throws
+ }
+ 
+ struct Configuration {
++    @available(*, deprecated)
+     var passphrase: String?
+ }
+```
+
+**New Methods**
+
+```diff 
+ class DatabasePool {
++    func barrierWriteWithoutTransaction<T>(_ updates: (Database) throws -> T) rethrows -> T
++    func invalidateReadOnlyConnections()
+ }
+ 
+ class Database {
++    func usePassphrase(_ passphrase: String) throws
++    func changePassphrase(_ passphrase: String) throws
++    var lastErrorCode: ResultCode
++    var lastErrorMessage: String?
+ }
+```
+
+
+## 4.3.0
+
+Released August 28, 2019 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.2.1...v4.3.0)
+
+**New**
+
+- [#600](https://github.com/groue/GRDB.swift/pull/600) by [@kdubb](https://github.com/kdubb): Add support for tvOS
+
+
+## 4.2.1
+
+Released August 13, 2019 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.2.0...v4.2.1)
+
+**Fixed**
+
+- [#592](https://github.com/groue/GRDB.swift/pull/592): Fix Data interpolation
+
+
+## 4.2.0
+
+Released August 6, 2019 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.1.1...v4.2.0)
+
+**New**
+
+- [#570](https://github.com/groue/GRDB.swift/pull/570) by [@chrisballinger](https://github.com/chrisballinger): Allow Swift static library integration via CocoaPods
+- [#576](https://github.com/groue/GRDB.swift/pull/576): Expose table name and full-text filtering methods to DerivableRequest
+- [#586](https://github.com/groue/GRDB.swift/pull/586): Automatic region tracking for ValueObservation
+
+**Fixed**
+
+- [#560](https://github.com/groue/GRDB.swift/pull/560) by [@bellebethcooper](https://github.com/bellebethcooper): Minor typo fix
+- [#562](https://github.com/groue/GRDB.swift/pull/562): Fix crash when using more than one DatabaseCollation
+- [#577](https://github.com/groue/GRDB.swift/pull/577): Rename `aliased(_:)` methods to `forKey(_:)`
+- [#585](https://github.com/groue/GRDB.swift/pull/585): Fix use of SQLite authorizers
+
+**Other**
+
+- [#563](https://github.com/groue/GRDB.swift/pull/563): More tests for eager loading of hasMany associations
+- [#574](https://github.com/groue/GRDB.swift/pull/574): SwiftLint
+
+
+### Documentation Diff
+
+The [ValueObservation](README.md#valueobservation) chapter has been updated so that it fosters the new `ValueObservation.tracking(value:)` method. Other ways to define observations are now described as optimizations.
+
+
+### API Diff
+
+```diff
+-protocol DerivableRequest: FilteredRequest, JoinableRequest, OrderedRequest, SelectionRequest { }
++protocol DerivableRequest: FilteredRequest, JoinableRequest, OrderedRequest, SelectionRequest, TableRequest { }
+
+-extension QueryInterfaceRequest {
+-    func matching(_ pattern: FTS3Pattern?) -> QueryInterfaceRequest<T>
+-}
+-extension QueryInterfaceRequest {
+-    func matching(_ pattern: FTS5Pattern?) -> QueryInterfaceRequest<T>
+-}
++extension TableRequest where Self: FilteredRequest {
++    func matching(_ pattern: FTS3Pattern?) -> Self
++}
++extension TableRequest where Self: FilteredRequest {
++    func matching(_ pattern: FTS5Pattern?) -> Self
++}
+ 
+ protocol Association: DerivableRequest {
+-    associatedtype OriginRowDecoder
++    associatedtype OriginRowDecoder: TableRecord
+ }
+
+-struct BelongsToAssociation<Origin, Destination>: AssociationToOne { }
+-struct HasManyAssociation<Origin, Destination>: AssociationToMany { }
+-struct HasManyThroughAssociation<Origin, Destination>: AssociationToMany { }
+-struct HasOneAssociation<Origin, Destination>: AssociationToOne { }
+-struct HasOneThroughAssociation<Origin, Destination>: AssociationToOne { }
++struct BelongsToAssociation<Origin: TableRecord, Destination: TableRecord>: AssociationToOne { }
++struct HasManyAssociation<Origin: TableRecord, Destination: TableRecord>: AssociationToMany { }
++struct HasManyThroughAssociation<Origin: TableRecord, Destination: TableRecord>: AssociationToMany { }
++struct HasOneAssociation<Origin: TableRecord, Destination: TableRecord>: AssociationToOne { }
++struct HasOneThroughAssociation<Origin: TableRecord, Destination: TableRecord>: AssociationToOne { }
+
+-struct QueryInterfaceRequest<T>: DerivableRequest { }
++struct QueryInterfaceRequest<T>: FilteredRequest, OrderedRequest, SelectionRequest, TableRequuest { }
++extension QueryInterfaceRequest: JoinableRequest where T: TableRecord { }
++extension QueryInterfaceRequest: DerivableRequest where T: TableRecord { }
+
+ extension AssociationAggregate {
++    @available(*, deprecated, renamed: "forKey(_:)")
+     func aliased(_ name: String) -> AssociationAggregate<RowDecoder>
++    func forKey(_ name: String) -> AssociationAggregate<RowDecoder>
+ 
++    @available(*, deprecated, renamed: "forKey(_:)")
+     func aliased(_ key: CodingKey) -> AssociationAggregate<RowDecoder>
++    func forKey(_ key: CodingKey) -> AssociationAggregate<RowDecoder>
+ }
+ 
+ extension SQLSpecificExpressible {
++    @available(*, deprecated, renamed: "forKey(_:)")
+     func aliased(_ name: String) -> SQLSelectable
++    func forKey(_ name: String) -> SQLSelectable
+ 
++    @available(*, deprecated, renamed: "forKey(_:)")
+     func aliased(_ key: CodingKey) -> SQLSelectable
++    func forKey(_ key: CodingKey) -> SQLSelectable
+ }
+ 
+ extension ValueObservation where Reducer == Void {
++    static func tracking<Value>(fetch: @escaping (Database) throws -> Value) -> ValueObservation<ValueReducers.Fetch<Value>>
+ }
+```
+
 
 ## 4.1.1
 

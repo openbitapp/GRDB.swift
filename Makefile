@@ -49,19 +49,32 @@ endif
 TEST_ACTIONS = clean build build-for-testing test-without-building
 
 # When adding support for an Xcode version, look for available devices with `instruments -s devices`
-ifeq ($(XCODEVERSION),10.2)
+ifeq ($(XCODEVERSION),10.3)
+  MAX_SWIFT_VERSION = 5
+  MIN_SWIFT_VERSION = 4.2
+  MAX_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone X,OS=12.4"
+  MIN_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone 4s,OS=9.0"
+  MAX_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV 4K,OS=12.4"
+  MIN_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV,OS=10.0"
+else ifeq ($(XCODEVERSION),10.2)
   MAX_SWIFT_VERSION = 5
   MIN_SWIFT_VERSION = 4.2
   MAX_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone X,OS=12.2"
   MIN_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone 4s,OS=9.0"
+  MAX_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV 4K,OS=12.2"
+  MIN_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV,OS=10.0"
 else ifeq ($(XCODEVERSION),10.1)
   MAX_SWIFT_VERSION = 4.2
   MAX_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone X,OS=12.1"
   MIN_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone 4s,OS=9.0"
+  MAX_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV 4K,OS=12.1"
+  MIN_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV,OS=10.0"
 else ifeq ($(XCODEVERSION),10.0)
   MAX_SWIFT_VERSION = 4.2
   MAX_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone 8,OS=12.0"
   MIN_IOS_DESTINATION = "platform=iOS Simulator,name=iPhone 4s,OS=9.0"
+  MAX_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV 4K,OS=12.0"
+  MIN_TVOS_DESTINATION = "platform=tvOS Simulator,name=Apple TV,OS=10.0"
 else
   # Swift 4.1 required: Xcode < 9.3 is not supported
 endif
@@ -100,7 +113,7 @@ test: test_framework test_install
 
 test_framework: test_framework_darwin
 test_framework_darwin: test_framework_GRDB test_framework_GRDBCustom test_framework_SQLCipher test_SPM
-test_framework_GRDB: test_framework_GRDBOSX test_framework_GRDBWatchOS test_framework_GRDBiOS
+test_framework_GRDB: test_framework_GRDBOSX test_framework_GRDBWatchOS test_framework_GRDBiOS test_framework_GRDBtvOS
 test_framework_GRDBCustom: test_framework_GRDBCustomSQLiteOSX test_framework_GRDBCustomSQLiteiOS
 test_framework_SQLCipher: test_framework_SQLCipher3 test_framework_SQLCipher4
 test_install: test_install_manual test_install_SPM test_install_GRDB_CocoaPods test_CocoaPodsLint
@@ -171,6 +184,42 @@ test_framework_GRDBiOS_minTarget:
 	  -project GRDB.xcodeproj \
 	  -scheme GRDBiOS \
 	  -destination $(MIN_IOS_DESTINATION) \
+	  SWIFT_VERSION=$(MAX_SWIFT_VERSION) \
+	  $(TEST_ACTIONS) \
+	  $(XCPRETTY)
+
+test_framework_GRDBtvOS: test_framework_GRDBtvOS_maxTarget test_framework_GRDBtvOS_minTarget
+test_framework_GRDBtvOS_maxTarget: test_framework_GRDBtvOS_maxTarget_maxSwift test_framework_GRDBtvOS_maxTarget_minSwift
+
+test_framework_GRDBtvOS_maxTarget_maxSwift:
+	# SQLITE_ENABLE_FTS5 requires iOS 11.4+
+	$(XCODEBUILD) \
+	  -project GRDB.xcodeproj \
+	  -scheme GRDBtvOS \
+	  -destination $(MAX_TVOS_DESTINATION) \
+	  SWIFT_VERSION=$(MAX_SWIFT_VERSION) \
+	  'OTHER_SWIFT_FLAGS=$(inherited) -D SQLITE_ENABLE_FTS5' \
+	  $(TEST_ACTIONS) \
+	  $(XCPRETTY)
+
+test_framework_GRDBtvOS_maxTarget_minSwift:
+ifdef MIN_SWIFT_VERSION
+	# SQLITE_ENABLE_FTS5 requires iOS 11.4+
+	$(XCODEBUILD) \
+	  -project GRDB.xcodeproj \
+	  -scheme GRDBtvOS \
+	  -destination $(MAX_TVOS_DESTINATION) \
+	  SWIFT_VERSION=$(MIN_SWIFT_VERSION) \
+	  'OTHER_SWIFT_FLAGS=$(inherited) -D SQLITE_ENABLE_FTS5' \
+	  $(TEST_ACTIONS) \
+	  $(XCPRETTY)
+endif
+
+test_framework_GRDBtvOS_minTarget:
+	$(XCODEBUILD) \
+	  -project GRDB.xcodeproj \
+	  -scheme GRDBtvOS \
+	  -destination $(MIN_TVOS_DESTINATION) \
 	  SWIFT_VERSION=$(MAX_SWIFT_VERSION) \
 	  $(TEST_ACTIONS) \
 	  $(XCPRETTY)
@@ -272,9 +321,27 @@ test_install_SPM:
 	./.build/debug/SPM && \
 	$(SWIFT) package unedit --force GRDB
 
-test_install_GRDB_CocoaPods:
+test_install_GRDB_CocoaPods: test_install_GRDB_CocoaPods_framework test_install_GRDB_CocoaPods_static
+
+test_install_GRDB_CocoaPods_framework:
 ifdef POD
-	cd Tests/CocoaPods/GRDBiOS && \
+	cd Tests/CocoaPods/GRDBiOS-framework && \
+	$(POD) install && \
+	$(XCODEBUILD) \
+	  -workspace iOS.xcworkspace \
+	  -scheme iOS \
+	  -configuration Release \
+	  -destination $(MAX_IOS_DESTINATION) \
+	  clean build \
+	  $(XCPRETTY)
+else
+	@echo CocoaPods must be installed for test_install_GRDB_CocoaPods
+	@exit 1
+endif
+
+test_install_GRDB_CocoaPods_static:
+ifdef POD
+	cd Tests/CocoaPods/GRDBiOS-static && \
 	$(POD) install && \
 	$(XCODEBUILD) \
 	  -workspace iOS.xcworkspace \
@@ -302,17 +369,17 @@ test_performance: Realm FMDB SQLite.swift
 	  -scheme GRDBOSXPerformanceComparisonTests \
 	  build-for-testing test-without-building
 
-Realm: Tests/Performance/Realm/build/osx/swift-10.2.1/RealmSwift.framework
+Realm: Tests/Performance/Realm/build/osx/swift-10.3/RealmSwift.framework
 
 # Makes sure the Tests/Performance/Realm submodule has been downloaded, and Realm framework has been built.
-Tests/Performance/Realm/build/osx/swift-10.2.1/RealmSwift.framework:
+Tests/Performance/Realm/build/osx/swift-10.3/RealmSwift.framework:
 	$(GIT) submodule update --init --recursive Tests/Performance/Realm
 	cd Tests/Performance/Realm && sh build.sh osx-swift
 
 FMDB: Tests/Performance/fmdb/src/fmdb/FMDatabase.h
 
 # Makes sure the Tests/Performance/fmdb submodule has been downloaded
-Tests/Performance/fmdb/FMDatabase.h:
+Tests/Performance/fmdb/src/fmdb/FMDatabase.h:
 	$(GIT) submodule update --init Tests/Performance/fmdb
 
 SQLite.swift: Tests/Performance/SQLite.swift/SQLite.xcodeproj
@@ -347,10 +414,10 @@ ifdef JAZZY
 	  --author 'Gwendal Roué' \
 	  --author_url https://github.com/groue \
 	  --github_url https://github.com/groue/GRDB.swift \
-	  --github-file-prefix https://github.com/groue/GRDB.swift/tree/v4.1.1 \
-	  --module-version 4.1 \
+	  --github-file-prefix https://github.com/groue/GRDB.swift/tree/v4.4.0 \
+	  --module-version 4.4.0 \
 	  --module GRDB \
-	  --root-url http://groue.github.io/GRDB.swift/docs/4.1/ \
+	  --root-url http://groue.github.io/GRDB.swift/docs/4.4/ \
 	  --output Documentation/Reference \
 	  --xcodebuild-arguments -project,GRDB.xcodeproj,-scheme,GRDBiOS
 else

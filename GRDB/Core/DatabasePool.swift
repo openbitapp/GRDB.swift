@@ -1,14 +1,14 @@
 import Foundation
 import Dispatch
 #if SWIFT_PACKAGE
-    import CSQLite
+import CSQLite
 #elseif GRDBCIPHER
-    import SQLCipher
+import SQLCipher
 #elseif !GRDBCUSTOMSQLITE && !GRDBCIPHER
-    import SQLite3
+import SQLite3
 #endif
 #if os(iOS)
-    import UIKit
+import UIKit
 #endif
 
 /// A DatabasePool grants concurrent accesses to an SQLite database.
@@ -79,7 +79,10 @@ public final class DatabasePool: DatabaseWriter {
                     // opens a pool to an existing non-WAL database, and
                     // attempts to read from it.
                     // See https://github.com/groue/GRDB.swift/issues/102
-                    try db.execute(sql: "CREATE TABLE grdb_issue_102 (id INTEGER PRIMARY KEY); DROP TABLE grdb_issue_102;")
+                    try db.execute(sql: """
+                        CREATE TABLE grdb_issue_102 (id INTEGER PRIMARY KEY);
+                        DROP TABLE grdb_issue_102;
+                        """)
                 }
             }
         }
@@ -87,8 +90,13 @@ public final class DatabasePool: DatabaseWriter {
         // Readers
         readerConfig = configuration
         readerConfig.readonly = true
-        readerConfig.defaultTransactionKind = .deferred // Make it the default for readers. Other transaction kinds are forbidden by SQLite in read-only connections.
-        readerConfig.allowsUnsafeTransactions = false   // Because there's no guarantee that one can get the same reader in order to close its opened transaction.
+        // Readers use deferred transactions by default.
+        // Other transaction kinds are forbidden by SQLite in read-only connections.
+        readerConfig.defaultTransactionKind = .deferred
+        // Readers can't allow dangling transactions because there's no
+        // guarantee that one can get the same reader later in order to close
+        // an opened transaction.
+        readerConfig.allowsUnsafeTransactions = false
         var readerCount = 0
         readerPool = Pool(maximumCount: configuration.maximumReaderCount, makeElement: { [unowned self] in
             readerCount += 1 // protected by pool's ReadWriteBox (undocumented behavior and protection)
@@ -134,9 +142,9 @@ public final class DatabasePool: DatabaseWriter {
 }
 
 extension DatabasePool {
-
+    
     // MARK: - WAL Checkpoints
-
+    
     /// Runs a WAL checkpoint
     ///
     /// See https://www.sqlite.org/wal.html and
@@ -151,24 +159,29 @@ extension DatabasePool {
             // when kind is not .Passive.
             let code = sqlite3_wal_checkpoint_v2(db.sqliteConnection, nil, kind.rawValue, nil, nil)
             guard code == SQLITE_OK else {
-                throw DatabaseError(resultCode: code, message: db.lastErrorMessage, sql: nil)
+                throw DatabaseError(resultCode: code, message: db.lastErrorMessage)
             }
         }
     }
 }
 
 extension DatabasePool {
-
+    
     // MARK: - Memory management
-
+    
     /// Free as much memory as possible.
     ///
-    /// This method blocks the current thread until all database accesses are completed.
+    /// This method blocks the current thread until all database accesses
+    /// are completed.
     ///
     /// See also setupMemoryManagement(application:)
     public func releaseMemory() {
-        forEachConnection { $0.releaseMemory() }
-        readerPool.clear()
+        // Release writer memory
+        writer.sync { $0.releaseMemory() }
+        // Release readers memory by closing all connections
+        readerPool.barrier {
+            readerPool.removeAll()
+        }
     }
     
     
@@ -195,7 +208,8 @@ extension DatabasePool {
             object: nil)
     }
     
-    @objc private func applicationDidEnterBackground(_ notification: NSNotification) {
+    @objc
+    private func applicationDidEnterBackground(_ notification: NSNotification) {
         guard let application = application else {
             return
         }
@@ -213,7 +227,8 @@ extension DatabasePool {
         }
     }
     
-    @objc private func applicationDidReceiveMemoryWarning(_ notification: NSNotification) {
+    @objc
+    private func applicationDidReceiveMemoryWarning(_ notification: NSNotification) {
         DispatchQueue.global().async {
             self.releaseMemory()
         }
@@ -222,24 +237,26 @@ extension DatabasePool {
 }
 
 #if SQLITE_HAS_CODEC
-    extension DatabasePool {
-
-        // MARK: - Encryption
-        
-        /// Changes the passphrase of an encrypted database
-        public func change(passphrase: String) throws {
-            try readerPool.clear(andThen: {
-                try writer.sync { try $0.change(passphrase: passphrase) }
-                readerConfig.passphrase = passphrase
-            })
+extension DatabasePool {
+    
+    // MARK: - Encryption
+    
+    /// Changes the passphrase of an encrypted database
+    @available(*, deprecated, message: "Use Database.changePassphrase(_:) instead")
+    public func change(passphrase: String) throws {
+        try readerPool.barrier {
+            try writer.sync { try $0.changePassphrase(passphrase) }
+            readerPool.removeAll()
+            readerConfig._passphrase = passphrase
         }
     }
+}
 #endif
 
-extension DatabasePool : DatabaseReader {
+extension DatabasePool: DatabaseReader {
     
     // MARK: - Reading from Database
-
+    
     /// Synchronously executes a read-only block in a protected dispatch queue,
     /// and returns its result. The block is wrapped in a deferred transaction.
     ///
@@ -493,7 +510,7 @@ extension DatabasePool : DatabaseReader {
         asyncConcurrentRead(block)
     }
     #endif
-
+    
     #if compiler(>=5.0)
     /// Asynchronously executes a read-only block in a protected dispatch queue.
     ///
@@ -580,6 +597,17 @@ extension DatabasePool : DatabaseReader {
     }
     #endif
     
+    /// Invalidates open read-only SQLite connections.
+    ///
+    /// After this method is called, read-only database access methods will use
+    /// new SQLite connections.
+    ///
+    /// Eventual concurrent read-only accesses are not invalidated: they will
+    /// proceed until completion.
+    public func invalidateReadOnlyConnections() {
+        readerPool.removeAll()
+    }
+    
     /// Returns a reader that can be used from the current dispatch queue,
     /// if any.
     private var currentReader: SerializedDatabase? {
@@ -621,6 +649,22 @@ extension DatabasePool : DatabaseReader {
         return try writer.sync(updates)
     }
     
+    /// A barrier write ensures that no database access is executed until all
+    /// previous accesses have completed, and the specified updates have been
+    /// executed.
+    ///
+    /// This method is *not* reentrant.
+    ///
+    /// - important: Reads executed by concurrent *database snapshots* are not
+    ///   considered: they can run concurrently with the barrier updates.
+    /// - parameter updates: The updates to the database.
+    /// - throws: The error thrown by the updates.
+    public func barrierWriteWithoutTransaction<T>(_ updates: (Database) throws -> T) rethrows -> T {
+        return try readerPool.barrier {
+            try writer.sync(updates)
+        }
+    }
+    
     /// Synchronously executes database updates in a protected dispatch queue,
     /// wrapped inside a transaction, and returns the result.
     ///
@@ -649,7 +693,11 @@ extension DatabasePool : DatabaseReader {
     ///     - updates: The updates to the database.
     /// - throws: The error thrown by the updates, or by the
     ///   wrapping transaction.
-    public func writeInTransaction(_ kind: Database.TransactionKind? = nil, _ updates: (Database) throws -> Database.TransactionCompletion) throws {
+    public func writeInTransaction(
+        _ kind: Database.TransactionKind? = nil,
+        _ updates: (Database) throws -> Database.TransactionCompletion)
+        throws
+    {
         try writer.sync { db in
             try db.inTransaction(kind) {
                 try updates(db)
@@ -811,7 +859,9 @@ extension DatabasePool {
         // Sanity check
         if writer.onValidQueue {
             writer.execute { db in
-                GRDBPrecondition(!db.isInsideTransaction, "makeSnapshot() must not be called from inside a transaction.")
+                GRDBPrecondition(
+                    !db.isInsideTransaction,
+                    "makeSnapshot() must not be called from inside a transaction.")
             }
         }
         

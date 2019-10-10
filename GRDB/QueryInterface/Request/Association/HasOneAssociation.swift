@@ -60,7 +60,7 @@
 ///     }
 ///
 /// See ForeignKey for more information.
-public struct HasOneAssociation<Origin, Destination>: AssociationToOne {
+public struct HasOneAssociation<Origin: TableRecord, Destination: TableRecord>: AssociationToOne {
     /// :nodoc:
     public typealias OriginRowDecoder = Origin
     
@@ -74,21 +74,4 @@ public struct HasOneAssociation<Origin, Destination>: AssociationToOne {
     public init(sqlAssociation: SQLAssociation) {
         self.sqlAssociation = sqlAssociation
     }
-}
-
-// Allow HasOneAssociation(...).filter(key: ...)
-extension HasOneAssociation: TableRequest where Destination: TableRecord { }
-
-
-extension HasOneAssociation {
-
-    public func matching(_ pattern: FTS5Pattern?) -> HasOneAssociation {
-        guard let pattern = pattern else {
-            return none()
-        }
-        let alias = TableAlias()
-        let matchExpression = TableMatchExpression(alias: alias, pattern: pattern.databaseValue)
-        return self.aliased(alias).filter(matchExpression)
-    }
-
 }
