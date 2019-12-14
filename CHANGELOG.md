@@ -3,7 +3,7 @@ Release Notes
 
 All notable changes to this project will be documented in this file.
 
-GRDB adheres to [Semantic Versioning](https://semver.org/), with one expection: APIs flagged [**:fire: EXPERIMENTAL**](README.md#what-are-experimental-features). Those are unstable, and may break between any two minor releases of the library.
+GRDB adheres to [Semantic Versioning](https://semver.org/), with one exception: APIs flagged [**:fire: EXPERIMENTAL**](README.md#what-are-experimental-features). Those are unstable, and may break between any two minor releases of the library.
 
 
 <!--
@@ -13,6 +13,7 @@ GRDB adheres to [Semantic Versioning](https://semver.org/), with one expection: 
 
 #### 4.x Releases
 
+- `4.6.x` Releases - [4.6.0](#460) | [4.6.1](#461) | [4.6.2](#462)
 - `4.5.x` Releases - [4.5.0](#450)
 - `4.4.x` Releases - [4.4.0](#440)
 - `4.3.x` Releases - [4.3.0](#430)
@@ -61,6 +62,40 @@ GRDB adheres to [Semantic Versioning](https://semver.org/), with one expection: 
 <!--
 ## Next Release
 -->
+
+
+## 4.6.2
+
+Released November 20, 2019 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.6.1...v4.6.2)
+
+**Fixed**
+
+- [#653](https://github.com/groue/GRDB.swift/pull/653) by [@michaelkirk-signal](https://github.com/michaelkirk-signal): Fix DatabaseMigrator.appliedMigrations() error on empty database
+
+
+## 4.6.1
+
+Released November 10, 2019 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.6.0...v4.6.1)
+
+**Fixed**
+
+- [#647](https://github.com/groue/GRDB.swift/pull/647): Honor conflict resolution for batch updates
+
+
+## 4.6.0
+
+Released November 9, 2019 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.5.0...v4.6.0)
+
+**New**
+
+- [#646](https://github.com/groue/GRDB.swift/pull/646): Batch updates
+
+### Documentation Diff
+
+The [Update Requests](README.md#update-requests) chapter documents the new support for batch updates introduced in the [query interface](README.md#the-query-interface).
+
+The [Associations Guide](Documentation/AssociationsBasics.md) has gained a new [Ordered Associations](Documentation/AssociationsBasics.md#ordered-associations) chapter which explains how to define ordered HasMany and HasManyThrough associations.
+
 
 ## 4.5.0
 
