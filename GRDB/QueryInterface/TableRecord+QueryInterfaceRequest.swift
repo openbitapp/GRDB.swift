@@ -11,16 +11,6 @@ extension TableRecord {
     /// all requests by the `TableRecord.databaseSelection` property, or
     /// for individual requests with the `TableRecord.select` method.
     public static func all() -> QueryInterfaceRequest<Self> {
-        // TODO: could we delay selection definition until we know what we are
-        // really fetching?
-        //
-        // Use case:
-        //
-        //      // Would be nice if it would only fetch SubPlayer columns
-        //      Player.all().asRequest(of: SubPlayer.self)
-        //
-        //      // Would be nice if it would fetch extra ExtendedPlayer columns
-        //      Player.all().asRequest(of: ExtendedPlayer.self)
         let relation = SQLRelation(
             source: .table(tableName: databaseTableName, alias: nil),
             selection: databaseSelection)
@@ -78,7 +68,7 @@ extension TableRecord {
     ///     }
     public static func select<RowDecoder>(
         _ selection: [SQLSelectable],
-        as type: RowDecoder.Type)
+        as type: RowDecoder.Type = RowDecoder.self)
         -> QueryInterfaceRequest<RowDecoder>
     {
         return all().select(selection, as: type)
@@ -94,7 +84,7 @@ extension TableRecord {
     ///     }
     public static func select<RowDecoder>(
         _ selection: SQLSelectable...,
-        as type: RowDecoder.Type)
+        as type: RowDecoder.Type = RowDecoder.self)
         -> QueryInterfaceRequest<RowDecoder>
     {
         return all().select(selection, as: type)
@@ -111,7 +101,7 @@ extension TableRecord {
     public static func select<RowDecoder>(
         sql: String,
         arguments: StatementArguments = StatementArguments(),
-        as type: RowDecoder.Type)
+        as type: RowDecoder.Type = RowDecoder.self)
         -> QueryInterfaceRequest<RowDecoder>
     {
         return all().select(literal: SQLLiteral(sql: sql, arguments: arguments), as: type)
@@ -127,7 +117,7 @@ extension TableRecord {
     ///     }
     public static func select<RowDecoder>(
         literal sqlLiteral: SQLLiteral,
-        as type: RowDecoder.Type)
+        as type: RowDecoder.Type = RowDecoder.self)
         -> QueryInterfaceRequest<RowDecoder>
     {
         return all().select(literal: sqlLiteral, as: type)
