@@ -1,4 +1,4 @@
-#if SWIFT_PACKAGE
+#if canImport(CSQLite) && SWIFT_PACKAGE
 import CSQLite
 #elseif GRDBCIPHER
 import SQLCipher

@@ -1,5 +1,5 @@
 import Foundation
-#if SWIFT_PACKAGE
+#if canImport(CSQLite) && SWIFT_PACKAGE
 import CSQLite
 #elseif GRDBCIPHER
 import SQLCipher
@@ -50,6 +50,7 @@ public final class Database {
     /// > for debugging.
     public static var logError: LogErrorFunction? = nil {
         didSet {
+            #if canImport(CSQLite) && !GRDBCUSTOMSQLITE
             if logError != nil {
                 registerErrorLogCallback { (_, code, message) in
                     guard let logError = Database.logError else { return }
@@ -60,6 +61,7 @@ public final class Database {
             } else {
                 registerErrorLogCallback(nil)
             }
+            #endif
         }
     }
     
@@ -297,9 +299,13 @@ public final class Database {
     
     private func setupDoubleQuotedStringLiterals() {
         if configuration.acceptsDoubleQuotedStringLiterals {
+            #if canImport(CSQLite) && !GRDBCUSTOMSQLITE
             enableDoubleQuotedStringLiterals(sqliteConnection)
+            #endif
         } else {
+            #if canImport(CSQLite) && !GRDBCUSTOMSQLITE
             disableDoubleQuotedStringLiterals(sqliteConnection)
+            #endif
         }
     }
     

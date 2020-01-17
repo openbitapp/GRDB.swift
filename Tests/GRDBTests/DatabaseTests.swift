@@ -2,7 +2,7 @@ import XCTest
 #if GRDBCUSTOMSQLITE
     @testable import GRDBCustomSQLite
 #else
-    #if SWIFT_PACKAGE
+    #if canImport(CSQLite) && SWIFT_PACKAGE
         import CSQLite
     #else
         import SQLite3
