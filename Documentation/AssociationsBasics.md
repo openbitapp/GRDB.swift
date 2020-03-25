@@ -1631,7 +1631,7 @@ let bookInfos = try BookInfo.all().fetchAll(db, request) // [BookInfo]
 
 ## Decoding a Joined Request with FetchableRecord
 
-When [Dedocable](#decoding-a-joined-request-with-a-decodable-record) records provides convenient decoding of joined rows, you may want a little more control over row decoding.
+When [Decodable](#decoding-a-joined-request-with-a-decodable-record) records provides convenient decoding of joined rows, you may want a little more control over row decoding.
 
 The `init(row:)` initializer of the [FetchableRecord] protocol is what you look after:
 
@@ -2301,7 +2301,7 @@ let request = Author.all().filter(country: "FR").orderedByName()
 let request = Book.all().filter(country: "ES")
 ```
 
-Thos methods are defined on extensions to the `DerivableRequest` protocol:
+Those methods are defined on extensions to the `DerivableRequest` protocol:
 
 ```swift
 extension DerivableRequest where RowDecoder == Author {
@@ -2380,7 +2380,7 @@ This documentation owns a lot to the [Active Record Associations](http://guides.
 
 **GRDB**
 
-Copyright (C) 2019 Gwendal Roué
+Copyright (C) 2015-2020 Gwendal Roué
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

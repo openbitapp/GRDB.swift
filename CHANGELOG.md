@@ -13,6 +13,9 @@ GRDB adheres to [Semantic Versioning](https://semver.org/), with one exception: 
 
 #### 4.x Releases
 
+- `4.12.x` Releases - [4.12.0](#4120)
+- `4.11.x` Releases - [4.11.0](#4110)
+- `4.10.x` Releases - [4.10.0](#4100)
 - `4.9.x` Releases - [4.9.0](#490)
 - `4.8.x` Releases - [4.8.0](#480) | [4.8.1](#481)
 - `4.7.x` Releases - [4.7.0](#470)
@@ -65,6 +68,85 @@ GRDB adheres to [Semantic Versioning](https://semver.org/), with one exception: 
 <!--
 ## Next Release
 -->
+
+## 4.12.0
+
+Released March 21, 2020 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.11.0...v4.12.0)
+
+**New**
+
+- Batch updates now accept nil assignments:
+    
+    ```swift
+    // UPDATE player SET score = NULL
+    try Player.updateAll(db, scoreColumn <- nil)
+    ```
+
+- DatabaseMigrator can now recreate the database if a migration has been removed, or renamed (addresses [#725](https://github.com/groue/GRDB.swift/issues/725)).
+    
+- DatabaseMigrator querying methods have been enhanced:
+    
+    ```swift
+    // New
+    dbQueue.read(migrator.hasCompletedMigrations)
+    dbQueue.read(migrator.completedMigrations).contains("v2")
+    dbQueue.read(migrator.completedMigrations).last == "v2"
+    dbQueue.read(migrator.appliedMigrations)
+    
+    // Deprecated
+    migrator.hasCompletedMigrations(in: dbQueue)
+    migrator.hasCompletedMigrations(in: dbQueue, through: "v2")
+    migrator.lastCompletedMigration(in: dbQueue) == "v2"
+    migrator.appliedMigrations(in: dbQueue)
+    ```
+
+## 4.11.0
+
+Released March 2, 2020 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.10.0...v4.11.0)
+
+### New
+
+- [#706](https://github.com/groue/GRDB.swift/pull/706): Enhance SQLLiteral and SQL interpolation again
+- [#710](https://github.com/groue/GRDB.swift/pull/710): Check if all migrations have been applied
+- [#712](https://github.com/groue/GRDB.swift/pull/712) by [@pakko972](https://github.com/pakko972): Automatic iOS memory management
+- [#713](https://github.com/groue/GRDB.swift/pull/713): Enhance DatabaseMigrator isolation
+
+### Breaking Change
+
+- [#709](https://github.com/groue/GRDB.swift/pull/709): Simplify DatabaseMigrator API
+
+Database migrations have a new behavior which is a breaking change. However, it is very unlikely to impact your application.
+
+In previous versions of GRDB, a foreign key violation would immediately prevent a migration from successfully complete. Now, foreign key checks are deferred until the end of each migration. This means that some migrations will change their behavior:
+
+```swift
+// Used to fail, now succeeds
+migrator.registerMigration(...) { db in
+    try violateForeignKeyConstraint(db)
+    try fixForeignKeyConstraint(db)
+}
+
+// The catch clause is no longer called
+migrator.registerMigration(...) { db in
+    do {
+        try performChanges(db)
+    } catch let error as DatabaseError where error.resultCode == .SQL_CONSTRAINT {
+        // Handle foreign key error
+    }
+}
+```
+
+If your application happens to define migrations that are impacted by this change, please open an issue so that we find a way to restore the previous behavior.
+
+
+## 4.10.0
+
+Released February 23, 2020 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.9.0...v4.10.0)
+
+**New**
+
+- [#689](https://github.com/groue/GRDB.swift/pull/689) by [@gjeck](https://github.com/gjeck): Add support for renaming columns within a table
+- [#690](https://github.com/groue/GRDB.swift/pull/690): Enhance SQLLiteral and SQL interpolation
 
 
 ## 4.9.0
