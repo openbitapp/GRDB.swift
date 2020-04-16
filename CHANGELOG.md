@@ -13,7 +13,8 @@ GRDB adheres to [Semantic Versioning](https://semver.org/), with one exception: 
 
 #### 4.x Releases
 
-- `4.12.x` Releases - [4.12.0](#4120)
+- `4.13.x` Releases - [4.13.0](#4130)
+- `4.12.x` Releases - [4.12.0](#4120) | [4.12.1](#4121) | [4.12.2](#4122)
 - `4.11.x` Releases - [4.11.0](#4110)
 - `4.10.x` Releases - [4.10.0](#4100)
 - `4.9.x` Releases - [4.9.0](#490)
@@ -68,6 +69,38 @@ GRDB adheres to [Semantic Versioning](https://semver.org/), with one exception: 
 <!--
 ## Next Release
 -->
+
+## 4.13.0
+
+Released April 15, 2020 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.12.2...v4.13.0)
+
+**Fixed**
+
+- Restored support for Xcode 10.0 and Xcode 10.1, broken in 4.12.2
+- [#759](https://github.com/groue/GRDB.swift/pull/759): Fix batch updates of complex requests
+
+**New**
+
+- [#761](https://github.com/groue/GRDB.swift/pull/761): Deprecate the batch update `<-` operator
+
+
+## 4.12.2
+
+Released April 13, 2020 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.12.1...v4.12.2)
+
+**Fixed**
+
+- [#757](https://github.com/groue/GRDB.swift/pull/757): Don't load association inflections unless necessary
+
+
+## 4.12.1
+
+Released March 29, 2020 &bull; [diff](https://github.com/groue/GRDB.swift/compare/v4.12.0...v4.12.1)
+
+**Fixed**
+
+- [#744](https://github.com/groue/GRDB.swift/pull/744): Fix DatabaseMigrator deadlock with serial target queues
+
 
 ## 4.12.0
 
